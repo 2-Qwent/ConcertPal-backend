@@ -3,7 +3,7 @@ const router = express.Router();
 
 const API_KEY = process.env.API_KEY;
 
-router.get('/', (req, res) => {
+router.post('/', (req, res) => {
   const artist = req.body.artist
   const venue = req.body.venue
   const date = req.body.date
@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 
   let venueId = null;
 
-  // Étape 1 : si une salle est fournie, on récupère son ID
+  // si une salle est fournie, on récupère son ID
   const getVenueId = venue
     ? fetch(`https://app.ticketmaster.com/discovery/v2/venues.json?apikey=${API_KEY}&keyword=${encodeURIComponent(venue)}`)
         .then(response => response.json())
@@ -43,7 +43,7 @@ router.get('/', (req, res) => {
     .then(response => response.json())
     .then(data => {
       const events = data._embedded?.events || [];
-      res.json(events);
+      res.json({result: true, concerts: events});
     })
     .catch(err => {
       if (err.message === 'Salle non trouvée') {
