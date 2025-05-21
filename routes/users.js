@@ -40,7 +40,7 @@ router.post("/signup", (req, res) => {
 });
 
 //connexion à un compte
-router.get("/signin", (req, res) => {
+router.post("/signin", (req, res) => {
   //vérifie si les champs sont bien remplis
   if (!checkBody(req.body, ["username", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
