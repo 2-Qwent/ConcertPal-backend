@@ -27,7 +27,7 @@ router.post("/", (req, res) => {
       )
         .then((response) => response.json())
         .then((data) => {
-          console.log(data);
+          console.log("data", data);
           const venues = data._embedded?.venues;
           if (!venues || venues.length === 0) {
             throw new Error("Salle non trouvée");
@@ -66,7 +66,7 @@ router.post("/", (req, res) => {
 });
 
 // Route pour stocker un concert dans la base de données
-router.post("/add", async (req, res) => {
+router.post("/add/:token", async (req, res) => {
   try {
     const newConcert = new Concert({
       artist: req.body.artist,
@@ -79,7 +79,8 @@ router.post("/add", async (req, res) => {
     const concert = await newConcert.save();
 
     // Ajout de la référence du concert à l'utilisateur
-    const user = await User.findById(req.user.token);
+    const user = await User.findOne({ token: req.params.token });
+    console.log("user", user, req.params.token);
     user.concerts.push(concert._id);
     await user.save();
 
