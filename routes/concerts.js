@@ -67,40 +67,33 @@ router.post("/", (req, res) => {
 
 // Route pour stocker un concert dans la base de données
 router.post("/add/:token", async (req, res) => {
-  try {
-    const newConcert = new Concert({
-      artist: req.body.artist,
-      venue: req.body.venue,
-      date: req.body.date,
-      city: req.body.city,
-      pic: req.body.pic,
-    });
+  const newConcert = new Concert({
+    artist: req.body.artist,
+    venue: req.body.venue,
+    date: req.body.date,
+    city: req.body.city,
+    pic: req.body.pic,
+  });
 
-    const concert = await newConcert.save();
+  const concert = await newConcert.save();
 
-    // Ajout de la référence du concert à l'utilisateur
-    const user = await User.findOne({ token: req.params.token });
-    console.log("user", user, req.params.token);
-    user.concerts.push(concert._id);
-    await user.save();
-
-    res.status(201).json(concert);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erreur lors de la création du concert" });
-  }
+  await User.updateOne(
+    { token: req.params.token },
+    { $push: { concertList: concert._id } }
+  );
+  res.status(201).json({ result: true });
 });
 
 // Route pour récupérer les concerts d'un utilisateur
-router.get("/myConcerts", async (req, res) => {
+router.get("/:token", async (req, res) => {
   try {
-    const user = await User.findOne({ token: req.user.token }).populate(
-      "concerts"
+    const user = await User.findOne({ token: req.params.token }).populate(
+      "concertList"
     );
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
-    res.json({ result: true, list: user.concerts });
+    res.json({ result: true, list: user.concertList });
   } catch (error) {
     console.error(error);
     res
