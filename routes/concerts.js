@@ -1,28 +1,36 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const API_KEY = process.env.API_KEY;
+const Concert = require("../models/myConcerts");
+const User = require("../models/users");
 
-router.post('/', (req, res) => {
-  const artist = req.body.artist
-  const venue = req.body.venue
-  const date = req.body.date
+router.post("/", (req, res) => {
+  const artist = req.body.artist;
+  const venue = req.body.venue;
+  const date = req.body.date;
 
   if (!artist && !venue && !date) {
-    return res.status(400).json({ error: 'Au moins un des champs de saisie doit être renseigné' });
+    return res
+      .status(400)
+      .json({ error: "Au moins un des champs de saisie doit être renseigné" });
   }
 
   let venueId = null;
 
   // si une salle est fournie, on récupère son ID
   const getVenueId = venue
-    ? fetch(`https://app.ticketmaster.com/discovery/v2/venues.json?apikey=${API_KEY}&keyword=${encodeURIComponent(venue)}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log(data)
+    ? fetch(
+        `https://app.ticketmaster.com/discovery/v2/venues.json?apikey=${API_KEY}&keyword=${encodeURIComponent(
+          venue
+        )}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
           const venues = data._embedded?.venues;
           if (!venues || venues.length === 0) {
-            throw new Error('Salle non trouvée');
+            throw new Error("Salle non trouvée");
           }
           venueId = venues[0].id;
         })
@@ -40,19 +48,64 @@ router.post('/', (req, res) => {
 
       return fetch(eventUrl);
     })
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       const events = data._embedded?.events || [];
-      res.json({result: true, concerts: events});
+      res.json({ result: true, concerts: events });
     })
-    .catch(err => {
-      if (err.message === 'Salle non trouvée') {
-        res.status(404).json({ error: 'Salle non trouvée' });
+    .catch((err) => {
+      if (err.message === "Salle non trouvée") {
+        res.status(404).json({ error: "Salle non trouvée" });
       } else {
         console.error(err);
-        res.status(500).json({ error: 'Failed to fetch data from Ticketmaster' });
+        res
+          .status(500)
+          .json({ error: "Failed to fetch data from Ticketmaster" });
       }
     });
+});
+
+// Route pour stocker un concert dans la base de données
+router.post("/add", async (req, res) => {
+  try {
+    const newConcert = new Concert({
+      artist: req.body.artist,
+      venue: req.body.venue,
+      date: req.body.date,
+      city: req.body.city,
+      pic: req.body.pic,
+    });
+
+    const concert = await newConcert.save();
+
+    // Ajout de la référence du concert à l'utilisateur
+    const user = await User.findById(req.user.token);
+    user.concerts.push(concert._id);
+    await user.save();
+
+    res.status(201).json(concert);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur lors de la création du concert" });
+  }
+});
+
+// Route pour récupérer les concerts d'un utilisateur
+router.get("/myConcerts", async (req, res) => {
+  try {
+    const user = await User.findOne({ token: req.user.token }).populate(
+      "concerts"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    res.json({ result: true, list: user.concerts });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la récupération des concerts" });
+  }
 });
 
 module.exports = router;
