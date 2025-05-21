@@ -27,6 +27,7 @@ router.post("/signup", (req, res) => {
         username: req.body.username,
         password: hash,
         token: uid2(32),
+        avatar: "default_avatar"
       });
 
       newUser.save().then((newDoc) => {
@@ -40,7 +41,7 @@ router.post("/signup", (req, res) => {
 });
 
 //connexion à un compte
-router.get("/signin", (req, res) => {
+router.post("/signin", (req, res) => {
   //vérifie si les champs sont bien remplis
   if (!checkBody(req.body, ["username", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
