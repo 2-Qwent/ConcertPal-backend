@@ -8,26 +8,26 @@ require("../models/connection");
 
 
 //Ajout du token de la personne qui like le post
-router.post("/add-likes", (req, res) => {
+router.post("/likes", (req, res) => {
   console.log("OUI", req.body)
-  Post.findById({ _id: req.body._id }).then((data) => {
+  Post.findById(req.body._id).then((data) => {
     console.log("ICI", data)
     const alreadyLiked = data.likes.some(
-      (like) => like.token === req.body.token
+      (like) => like === req.body.token
     );
     //si l'utilisateur n'a pas liké le post, on l'ajoute
     if (!alreadyLiked) {
       Post.updateOne(
         { _id: req.body._id },
-        { $push: { likes: { token: req.body.token } } }
+        { $push: { likes:  req.body.token } }
       ).then(() => {
-        res.json({ result: true, data: data.likes });
+        res.json({ result: true });
       });
     } else {
       //sinon on le retire
       Post.updateOne(
         { _id: req.body._id },
-        { $pull: { likes: { token: req.body.token } } }
+        { $pull: { likes: req.body.token } }
       ).then(() => {
         res.json({ result: true, data: data.likes });
       });
@@ -81,11 +81,11 @@ router.get("/:token", (req, res) => {
     });
 });
 
-//supprimer un post
+//supprimer un post selon son id
 router.delete("/:id", (req, res) => {
-  Post.findByIdAndDelete(req.params.id).then((data) => {
+  Post.findByIdAndDelete(req.params._id).then((data) => {
     if (data) {
-      res.json({ result: true, data });
+      res.json({ result: true });
     } else {
       res.json({ result: false, error: "Post not found" });
     }
