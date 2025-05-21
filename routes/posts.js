@@ -6,6 +6,36 @@ const { checkBody } = require("../modules/checkBody");
 
 require("../models/connection");
 
+
+//Ajout du token de la personne qui like le post
+router.post("/likes", (req, res) => {
+  console.log("OUI", req.body)
+  Post.findOne({ _id: req.body._id }).then((data) => {
+    console.log("ICI", data)
+    const alreadyLiked = data.likes.some(
+      (like) => like.token === req.body.token
+    );
+    //si l'utilisateur n'a pas liké le post, on l'ajoute
+    if (!alreadyLiked) {
+      Post.updateOne(
+        { _id: req.body._id },
+        { $push: { likes: { token: req.body.token } } }
+      ).then(() => {
+        res.json({ result: true, data: data.likes });
+      });
+    } else {
+      //sinon on le retire
+      Post.updateOne(
+        { _id: req.body._id },
+        { $pull: { likes: { token: req.body.token } } }
+      ).then(() => {
+        res.json({ result: true, data: data.likes });
+      });
+    }
+  });
+});
+
+
 //créer un post
 router.post("/:token", (req, res) => {
   if (!checkBody(req.body, ["text"])) {
@@ -34,17 +64,34 @@ router.post("/:token", (req, res) => {
 
 //récupérer tous les posts
 router.get("/", (req, res) => {
-  Post.find().populate('author').then((data) => {
-    res.json({ result: true, posts: data });
-  });
+  Post.find()
+    .populate("author")
+    .then((data) => {
+      res.json({ result: true, posts: data });
+    });
 });
 
 //récupérer les posts d'un utilisateur
-router.get('/:token', (req, res) => {
-    Post.find().populate('author').then(data => {
-        let userPosts = data.filter(e => e.author.token === req.params.token)
-        res.json({ result: true, posts: userPosts})
-    })
-})
+router.get("/:token", (req, res) => {
+  Post.find()
+    .populate("author")
+    .then((data) => {
+      let userPosts = data.filter((e) => e.author.token === req.params.token);
+      res.json({ result: true, posts: userPosts });
+    });
+});
+
+//supprimer un post
+router.delete("/:id", (req, res) => {
+  Post.findByIdAndDelete(req.params.id).then((data) => {
+    if (data) {
+      res.json({ result: true, data });
+    } else {
+      res.json({ result: false, error: "Post not found" });
+    }
+  });
+});
+
+
 
 module.exports = router;
