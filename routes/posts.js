@@ -8,9 +8,9 @@ require("../models/connection");
 
 
 //Ajout du token de la personne qui like le post
-router.post("/likes", (req, res) => {
+router.post("/add-likes", (req, res) => {
   console.log("OUI", req.body)
-  Post.findOne({ _id: req.body._id }).then((data) => {
+  Post.findById({ _id: req.body._id }).then((data) => {
     console.log("ICI", data)
     const alreadyLiked = data.likes.some(
       (like) => like.token === req.body.token
