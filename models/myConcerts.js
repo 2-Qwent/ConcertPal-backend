@@ -7,6 +7,7 @@ const ConcertSchema = mongoose.Schema({
   date: Date,
   city: String,
   pic: String,
+  seatmap: String,
 });
 
 const Concert = mongoose.model('myConcerts', ConcertSchema);
