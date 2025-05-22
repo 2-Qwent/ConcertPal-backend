@@ -82,7 +82,7 @@ router.post("/add/:token", async (req, res) => {
     { token: req.params.token },
     { $push: { concertList: concert._id } }
   );
-  res.status(201).json({ result: true });
+  res.status(201).json({ result: true, id: concert._id });
 });
 
 // Route pour récupérer les concerts d'un utilisateur
@@ -102,5 +102,25 @@ router.get("/:token", async (req, res) => {
       .json({ message: "Erreur lors de la récupération des concerts" });
   }
 });
+
+router.delete("/delete/:token", async (req, res) => {
+  try {
+    const user = await User.findOne({ token: req.params.token });
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    const concertId = req.body.concertId;
+    await Concert.deleteOne({ _id: concertId });
+    await User.updateOne(
+      { token: req.params.token },
+      { $pull: { concertList: concertId } }
+    );
+    res.json({ result: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur lors de la suppression du concert" });
+  } 
+}
+);
 
 module.exports = router;
