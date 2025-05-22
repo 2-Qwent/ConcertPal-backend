@@ -27,7 +27,7 @@ router.post("/signup", (req, res) => {
         username: req.body.username,
         password: hash,
         token: uid2(32),
-        avatar: "default_avatar"
+        avatar: "default_avatar",
       });
 
       newUser.save().then((newDoc) => {
@@ -63,13 +63,15 @@ router.post("/signin", (req, res) => {
 
 //récuperer les infos d'un utilisateur avec son token
 router.get("/:token", (req, res) => {
-  User.findOne({ token: req.params.token }).then((data) => {
-    if (data) {
-      res.json({ result: true, user: data });
-    } else {
-      res.json({ result: false, error: "User not found" });
-    }
-  });
+  User.findOne({ token: req.params.token })
+    .populate("posts")
+    .then((data) => {
+      if (data) {
+        res.json({ result: true, user: data });
+      } else {
+        res.json({ result: false, error: "User not found" });
+      }
+    });
 });
 
 //supprimer un compte
