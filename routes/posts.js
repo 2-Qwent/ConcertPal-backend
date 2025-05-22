@@ -83,7 +83,7 @@ router.get("/:token", (req, res) => {
 
 //supprimer un post selon son id
 router.delete("/:id", (req, res) => {
-  Post.findByIdAndDelete(req.params._id).then((data) => {
+  Post.findByIdAndDelete(req.params.id).then((data) => {
     if (data) {
       res.json({ result: true });
     } else {
