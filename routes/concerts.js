@@ -73,6 +73,7 @@ router.post("/add/:token", async (req, res) => {
     date: req.body.date,
     city: req.body.city,
     pic: req.body.pic,
+    seatmap: req.body.seatmap,
   });
 
   const concert = await newConcert.save();
