@@ -8,9 +8,7 @@ require("../models/connection");
 
 //Ajout du token de la personne qui like le post
 router.post("/likes", (req, res) => {
-  console.log("OUI", req.body);
   Post.findById(req.body._id).then((data) => {
-    console.log("ICI", data);
     const alreadyLiked = data.likes.some((like) => like === req.body.token);
     //si l'utilisateur n'a pas liké le post, on l'ajoute
     if (!alreadyLiked) {
@@ -53,7 +51,11 @@ router.post("/:token", (req, res) => {
           { token: req.params.token },
           { $push: { posts: post._id } }
         ).then(() => {
-          res.json({ result: true, post });
+          Post.findById(post._id)
+            .populate("author")
+            .then((populatedPost) => {
+              res.json({ result: true, post: populatedPost });
+            });
         });
       });
     } else {
@@ -85,7 +87,6 @@ router.get("/:token", (req, res) => {
 //supprimer un post selon son id
 router.delete("/:_id", (req, res) => {
   Post.findByIdAndDelete(req.params._id).then((data) => {
-    console.log(data);
     if (data) {
       res.json({ result: true });
     } else {
