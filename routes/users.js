@@ -85,4 +85,35 @@ router.delete("/:token", (req, res) => {
   });
 });
 
+router.put('/update-avatar', async (req, res) => {
+  try {
+    const { userId, avatarUrl } = req.body;
+
+    if (!userId || !avatarUrl) {
+      return res.status(400).json({ message: 'UserId et avatarUrl sont requis' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { avatar: avatarUrl },
+        { new: true }
+    )
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour de l\'avatar',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

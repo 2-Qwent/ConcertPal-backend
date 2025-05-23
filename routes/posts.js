@@ -6,6 +6,7 @@ const { checkBody } = require("../modules/checkBody");
 
 require("../models/connection");
 
+
 //Ajout du token de la personne qui like le post
 router.post("/likes", (req, res) => {
   Post.findById(req.body._id).then((data) => {
@@ -14,7 +15,7 @@ router.post("/likes", (req, res) => {
     if (!alreadyLiked) {
       Post.updateOne(
         { _id: req.body._id },
-        { $push: { likes: req.body.token } }
+        { $push: { likes:  req.body.token } }
       ).then(() => {
         res.json({ result: true });
       });
@@ -29,6 +30,7 @@ router.post("/likes", (req, res) => {
     }
   });
 });
+
 
 //créer un post
 router.post("/:token", (req, res) => {
@@ -94,5 +96,7 @@ router.delete("/:_id", (req, res) => {
     }
   });
 });
+
+
 
 module.exports = router;

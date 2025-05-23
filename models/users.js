@@ -10,7 +10,6 @@ const UserSchema = mongoose.Schema({
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "posts" }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "comments" }],
   friendsList: [String],
-  avatar: String,
 });
 
 const User = mongoose.model("users", UserSchema);
