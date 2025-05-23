@@ -6,17 +6,20 @@ const { checkBody } = require("../modules/checkBody");
 
 require("../models/connection");
 
+
 //Ajout du token de la personne qui like le post
 router.post("/likes", (req, res) => {
-  console.log("OUI", req.body);
+  console.log("OUI", req.body)
   Post.findById(req.body._id).then((data) => {
-    console.log("ICI", data);
-    const alreadyLiked = data.likes.some((like) => like === req.body.token);
+    console.log("ICI", data)
+    const alreadyLiked = data.likes.some(
+      (like) => like === req.body.token
+    );
     //si l'utilisateur n'a pas liké le post, on l'ajoute
     if (!alreadyLiked) {
       Post.updateOne(
         { _id: req.body._id },
-        { $push: { likes: req.body.token } }
+        { $push: { likes:  req.body.token } }
       ).then(() => {
         res.json({ result: true });
       });
@@ -31,6 +34,7 @@ router.post("/likes", (req, res) => {
     }
   });
 });
+
 
 //créer un post
 router.post("/:token", (req, res) => {
@@ -48,13 +52,8 @@ router.post("/:token", (req, res) => {
         date: new Date(),
       });
 
-      newPost.save().then((post) => {
-        User.updateOne(
-          { token: req.params.token },
-          { $push: { posts: post._id } }
-        ).then(() => {
-          res.json({ result: true, post });
-        });
+      newPost.save().then((data) => {
+        res.json({ result: true, post: data });
       });
     } else {
       //l'utilisateur n'est pas authentifié
@@ -83,9 +82,8 @@ router.get("/:token", (req, res) => {
 });
 
 //supprimer un post selon son id
-router.delete("/:_id", (req, res) => {
-  Post.findByIdAndDelete(req.params._id).then((data) => {
-    console.log(data);
+router.delete("/:id", (req, res) => {
+  Post.findByIdAndDelete(req.params.id).then((data) => {
     if (data) {
       res.json({ result: true });
     } else {
@@ -93,5 +91,7 @@ router.delete("/:_id", (req, res) => {
     }
   });
 });
+
+
 
 module.exports = router;
