@@ -5,6 +5,7 @@ const ZoneSchema = mongoose.Schema({
   number: Number,
   users: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }]
 })
+
 const ConcertSchema = mongoose.Schema({
   artist: String,
   venue: String,
@@ -12,6 +13,7 @@ const ConcertSchema = mongoose.Schema({
   city: String,
   pic: String,
   seatmap: String,
+  zones: [ZoneSchema],
   zones: [ZoneSchema],
 });
 
