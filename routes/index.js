@@ -38,6 +38,7 @@ router.get('/messages/last/:userToken', async (req, res) => {
   const messages = await Message.find({ channel: { $regex: userToken } }).sort({ date: -1 });
 
   // On garde le dernier message pour chaque channel
+
   const lastMessages = [];
   messages.forEach(msg => {
     if (!seenChannels.has(msg.channel)) {
