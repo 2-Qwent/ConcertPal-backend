@@ -21,19 +21,19 @@ router.post("/", (req, res) => {
   // si une salle est fournie, on récupère son ID
   const getVenueId = venue
     ? fetch(
-        `https://app.ticketmaster.com/discovery/v2/venues.json?apikey=${API_KEY}&keyword=${encodeURIComponent(
-          venue
-        )}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("data", data);
-          const venues = data._embedded?.venues;
-          if (!venues || venues.length === 0) {
-            throw new Error("Salle non trouvée");
-          }
-          venueId = venues[0].id;
-        })
+      `https://app.ticketmaster.com/discovery/v2/venues.json?apikey=${API_KEY}&keyword=${encodeURIComponent(
+        venue
+      )}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("data", data);
+        const venues = data._embedded?.venues;
+        if (!venues || venues.length === 0) {
+          throw new Error("Salle non trouvée");
+        }
+        venueId = venues[0].id;
+      })
     : Promise.resolve(); // Pas de salle ? On saute l'étape
 
   getVenueId
@@ -141,11 +141,11 @@ router.delete("/delete/:token", async (req, res) => {
     res.json({ result: true });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ message: "Erreur lors de la suppression du concert" });
+    res.status(500).json({ message: "Erreur lors de la suppression du concert" });
   }
-});
+}
+);
+
 
 //Ajouter une zone à un concert
 router.post("/addZone/:token", (req, res) => {
@@ -158,7 +158,6 @@ router.post("/addZone/:token", (req, res) => {
       }
 
       Concert.findById(concertId).then((concert) => {
-        console.log("ici le concert", concert);
         if (!concert) {
           return res.status(404).json({ message: "Concert non trouvé" });
         }
@@ -168,16 +167,14 @@ router.post("/addZone/:token", (req, res) => {
           (zone) => zone.number === zoneNumber
         );
         if (existingZone) {
-          Concert.updateOne(
-            { _id: concertId, "zones.number": zoneNumber },
-            { $push: { "zones.$.users": user._id } }
-          ).then(() => {
-            Concert.findById(concertId)
-              .populate("zones.users")
-              .then((updatedConcert) => {
-                res.json({ result: true, concert: updatedConcert });
-              });
-          });
+          Concert.updateOne({ _id: concertId, "zones.number": zoneNumber }, { $push: { 'zones.$.users': user._id } })
+            .then(() => {
+              Concert.findById(concertId)
+                .populate('zones.users')
+                .then((updatedConcert) => {
+                  res.json({ result: true, concert: updatedConcert });
+                });
+            })
         } else {
           //Ajouter une nouvelle zone
           const newZone = {
@@ -231,6 +228,47 @@ router.delete("/removeUser/:token", (req, res) => {
         message: "Erreur lors de la suppression de l'utilisateur de la zone",
         error: error.message,
       });
+  }
+});
+
+//route get pour récupérer les utilisateurs d'une zone
+router.get('/getZoneUsers/:concertId/:zoneNumber', async (req, res) => {
+  const { concertId, zoneNumber } = req.params;
+  try {
+    const concert = await Concert.findById(concertId).populate('zones.users');
+    if (!concert) {
+      return res.status(404).json({ message: 'Concert non trouvé' });
+    }
+
+    const zone = concert.zones.find(zone => zone.number === Number(zoneNumber));
+    if (!zone) {
+      return res.status(404).json({ message: 'Zone non trouvée' });
+    }
+
+    res.json({ result: true, users: zone.users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de la récupération des utilisateurs de la zone' });
+  }
+});
+
+router.get('/getUserZone/:concertId/:token', async (req, res) => {
+  const { concertId, token } = req.params;
+  try {
+    const user = await User.findOne({ token });
+    if (!user) return res.json({ result: false });
+
+    const concert = await Concert.findById(concertId);
+    if (!concert) return res.json({ result: false });
+
+    const zone = concert.zones.find(z => z.users.map(u => u.toString()).includes(user._id.toString()));
+    if (zone) {
+      res.json({ result: true, zone: zone.number });
+    } else {
+      res.json({ result: true, zone: null });
+    }
+  } catch (error) {
+    res.json({ result: false });
   }
 });
 
