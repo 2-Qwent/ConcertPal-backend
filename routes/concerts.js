@@ -66,23 +66,44 @@ router.post("/", (req, res) => {
 });
 
 // Route pour stocker un concert dans la base de données
-router.post("/add/:token", async (req, res) => {
-  const newConcert = new Concert({
+router.post("/add/:token", (req, res) => {
+  Concert.findOne({
     artist: req.body.artist,
     venue: req.body.venue,
     date: req.body.date,
-    city: req.body.city,
-    pic: req.body.pic,
-    seatmap: req.body.seatmap,
-  });
-
-  const concert = await newConcert.save();
-
-  await User.updateOne(
-    { token: req.params.token },
-    { $push: { concertList: concert._id } }
-  );
-  res.status(201).json({ result: true, id: concert._id });
+  })
+    .then(existingConcert => {
+      if (existingConcert) {
+        // Si le concert existe déjà, on l'utilise
+        return existingConcert;
+      } else {
+        // Sinon, on le crée
+        const newConcert = new Concert({
+          artist: req.body.artist,
+          venue: req.body.venue,
+          date: req.body.date,
+          city: req.body.city,
+          pic: req.body.pic,
+          seatmap: req.body.seatmap,
+          zones: [],
+        });
+        return newConcert.save();
+      }
+    })
+    .then(concert => {
+      // Ajoute le concert à la liste du user (évite les doublons avec $addToSet)
+      return User.updateOne(
+        { token: req.params.token },
+        { $addToSet: { concertList: concert._id } }
+      ).then(() => concert);
+    })
+    .then(concert => {
+      res.status(201).json({ result: true, id: concert._id });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ result: false, error: "Erreur lors de l'ajout du concert" });
+    });
 });
 
 // Route pour récupérer les concerts d'un utilisateur
