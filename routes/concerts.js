@@ -72,7 +72,7 @@ router.post("/add/:token", (req, res) => {
     venue: req.body.venue,
     date: req.body.date,
   })
-    .then(existingConcert => {
+    .then((existingConcert) => {
       if (existingConcert) {
         // Si le concert existe déjà, on l'utilise
         return existingConcert;
@@ -90,19 +90,21 @@ router.post("/add/:token", (req, res) => {
         return newConcert.save();
       }
     })
-    .then(concert => {
+    .then((concert) => {
       // Ajoute le concert à la liste du user (évite les doublons avec $addToSet)
       return User.updateOne(
         { token: req.params.token },
         { $addToSet: { concertList: concert._id } }
       ).then(() => concert);
     })
-    .then(concert => {
+    .then((concert) => {
       res.status(201).json({ result: true, id: concert._id });
     })
-    .catch(error => {
+    .catch((error) => {
       console.error(error);
-      res.status(500).json({ result: false, error: "Erreur lors de l'ajout du concert" });
+      res
+        .status(500)
+        .json({ result: false, error: "Erreur lors de l'ajout du concert" });
     });
 });
 
@@ -139,59 +141,97 @@ router.delete("/delete/:token", async (req, res) => {
     res.json({ result: true });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la suppression du concert" });
-  } 
-}
-);
-
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la suppression du concert" });
+  }
+});
 
 //Ajouter une zone à un concert
-router.post('/addZone/:token', (req, res) => {
+router.post("/addZone/:token", (req, res) => {
   const { concertId } = req.body;
   const zoneNumber = Number(req.body.zoneNumber);
   try {
     User.findOne({ token: req.params.token }).then((user) => {
       if (!user) {
-        return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
 
       Concert.findById(concertId).then((concert) => {
         console.log("ici le concert", concert);
         if (!concert) {
-          return res.status(404).json({ message: 'Concert non trouvé' });
+          return res.status(404).json({ message: "Concert non trouvé" });
         }
 
         //Vérifier si la zone existe déjà
-        const existingZone = concert.zones.find(zone => zone.number === zoneNumber);
+        const existingZone = concert.zones.find(
+          (zone) => zone.number === zoneNumber
+        );
         if (existingZone) {
-          Concert.updateOne({ _id: concertId, "zones.number": zoneNumber }, { $push: { 'zones.$.users': user._id } })
-            .then(() => {
-              Concert.findById(concertId)
-                .populate('zones.users')
-                .then((updatedConcert) => {
-                  res.json({ result: true, concert: updatedConcert });
-                });
-          })
+          Concert.updateOne(
+            { _id: concertId, "zones.number": zoneNumber },
+            { $push: { "zones.$.users": user._id } }
+          ).then(() => {
+            Concert.findById(concertId)
+              .populate("zones.users")
+              .then((updatedConcert) => {
+                res.json({ result: true, concert: updatedConcert });
+              });
+          });
         } else {
           //Ajouter une nouvelle zone
           const newZone = {
             number: zoneNumber,
-            users: [user._id]
+            users: [user._id],
           };
-          Concert.updateOne({ _id: concertId }, { $push: { zones: newZone }})
-            .then(() => {
-              Concert.findById(concertId)
-                .populate('zones.users')
-                .then((updatedConcert) => {
-                  res.json({ result: true, concert: updatedConcert });
-                });
-          })
+          Concert.updateOne(
+            { _id: concertId },
+            { $push: { zones: newZone } }
+          ).then(() => {
+            res.json({ result: true });
+          });
         }
-      })
-    })
+      });
+    });
   } catch (error) {
-    res.status(500).json({ message: "Erreur lors de l'ajout de la zone", error : error.message})
+    res
+      .status(500)
+      .json({
+        message: "Erreur lors de l'ajout de la zone",
+        error: error.message,
+      });
   }
-})
+});
+
+//supprimer un utilisateur d'une zone d'un concert
+router.delete("/removeUser/:token", (req, res) => {
+  const { concertId } = req.body;
+  const zoneNumber = Number(req.body.zoneNumber);
+  try {
+    User.findOne({ token: req.params.token }).then((user) => {
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      Concert.updateOne(
+        { _id: concertId, "zones.number": zoneNumber },
+        { $pull: { "zones.$.users": user._id } }
+      ).then(() => {
+        Concert.findById(concertId)
+          .populate("zones.users")
+          .then((updatedConcert) => {
+            res.json({ result: true, concert: updatedConcert });
+          });
+      });
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        message: "Erreur lors de la suppression de l'utilisateur de la zone",
+        error: error.message,
+      });
+  }
+});
 
 module.exports = router;

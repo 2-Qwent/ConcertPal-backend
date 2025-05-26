@@ -85,35 +85,126 @@ router.delete("/:token", (req, res) => {
   });
 });
 
-router.put('/update-avatar', async (req, res) => {
+//Mettre à jour la photo de profil
+router.put("/update-avatar", async (req, res) => {
   try {
     const { userId, avatarUrl } = req.body;
 
     if (!userId || !avatarUrl) {
-      return res.status(400).json({ message: 'UserId et avatarUrl sont requis' });
+      return res
+        .status(400)
+        .json({ message: "UserId et avatarUrl sont requis" });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { avatar: avatarUrl },
-        { new: true }
-    )
+      userId,
+      { avatar: avatarUrl },
+      { new: true }
+    );
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
     res.json({
       success: true,
-      user: updatedUser
+      user: updatedUser,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la mise à jour de l\'avatar',
-      error: error.message
+      message: "Erreur lors de la mise à jour de l'avatar",
+      error: error.message,
     });
   }
+});
+
+//Follow un utilisateur
+router.post("/follow/:userToken", async (req, res) => {
+  const { userToken } = req.params;
+  const { friendToken } = req.body;
+
+  try {
+    const user = await User.findOne({ token: userToken });
+    const friend = await User.findOne({ token: friendToken });
+
+    if (!user || !friend) {
+      return res.status(404).json({ result: false, error: "User not found" });
+    }
+
+    await User.updateOne(
+      { token: userToken },
+      { $addToSet: { following: friend._id } }
+    );
+    await User.updateOne(
+      { token: friendToken },
+      { $addToSet: { followers: user._id } }
+    );
+
+    res.json({
+      result: true,
+      message: "Utilisateur suivi avec succès",
+    });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
+
+//Unfollow un utilisateur
+router.delete("/unfollow/:userToken", async (req, res) => {
+  const { userToken } = req.params;
+  const { friendToken } = req.body;
+
+  try {
+    const user = await User.findOne({ token: userToken });
+    const friend = await User.findOne({ token: friendToken });
+
+    if (!user || !friend) {
+      return res.status(404).json({ result: false, error: "User not found" });
+    }
+
+    await User.updateOne(
+      { token: userToken },
+      { $pull: { following: friend._id } }
+    );
+    await User.updateOne(
+      { token: friendToken },
+      { $pull: { followers: user._id } }
+    );
+
+    res.json({
+      result: true,
+      message: "Utilisateur unfollow avec succès",
+    });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
+
+//Récupérer les follows d'un utilisateur
+router.get("/following/:token", (req, res) => {
+  User.findOne({ token: req.params.token })
+    .populate("following")
+    .then((user) => {
+      if (user) {
+        res.json({ result: true, following: user.following });
+      } else {
+        res.json({ result: false, error: "User not found" });
+      }
+    });
+});
+
+//récupérer les followers d'un utilisateur
+router.get("/followers/:token", (req, res) => {
+  User.findOne({ token: req.params.token })
+    .populate("followers")
+    .then((user) => {
+      if (user) {
+        res.json({ result: true, followers: user.followers });
+      } else {
+        res.json({ result: false, error: "User not found" });
+      }
+    });
 });
 
 module.exports = router;
