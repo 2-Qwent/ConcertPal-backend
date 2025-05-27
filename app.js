@@ -11,7 +11,8 @@ var postsRouter = require('./routes/posts');
 var concertsRouter = require('./routes/concerts')
 
 var app = express();
-
+const fileUpload = require('express-fileupload');
+app.use(fileUpload())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
