@@ -9,7 +9,8 @@ const UserSchema = mongoose.Schema({
   concertList: [{ type: mongoose.Schema.Types.ObjectId, ref: "myConcerts" }],
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "posts" }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "comments" }],
-  friendsList: [String],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
 });
 
 const User = mongoose.model("users", UserSchema);

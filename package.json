@@ -20,5 +20,10 @@
     "pusher": "^5.2.0",
     "uid2": "^1.0.0",
     "uniqid": "^5.4.0"
+    "uid2": "^1.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.1.1"
   }
 }
