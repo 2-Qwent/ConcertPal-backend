@@ -1,7 +1,8 @@
 var express = require('express');
 var router = express.Router();
 const Pusher = require("pusher");
-const Message = require('../models/messages'); 
+const Message = require('../models/messages');
+const User = require('../models/users');
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID,
@@ -12,7 +13,7 @@ const pusher = new Pusher({
 });
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
@@ -22,7 +23,7 @@ router.post("/messages/send", async (req, res) => {
   await newMsg.save();
 
   pusher.trigger(channel, "new-message", { sender, message });
-  
+
   res.json({ result: true });
 });
 
@@ -37,14 +38,33 @@ router.get('/messages/last/:userToken', async (req, res) => {
   // Récupère tous les messages où l'utilisateur est impliqué
   const messages = await Message.find({ channel: { $regex: userToken } }).sort({ date: -1 });
 
-  // On garde le dernier message pour chaque channel
-
+  const seenChannels = new Set();
   const lastMessages = [];
-  messages.forEach(msg => {
+
+  for (const msg of messages) {
     if (!seenChannels.has(msg.channel)) {
-      lastMessages.push(msg);
+      // Retire le préfixe "chat-"
+      const channelWithoutPrefix = msg.channel.replace('chat-', '');
+      // Récupère les deux tokens (32 caractères chacun)
+      const tokenA = channelWithoutPrefix.slice(0, 32);
+      const tokenB = channelWithoutPrefix.slice(-32);
+
+      // Trouve le token du destinataire
+      const destinataireToken = (tokenA === userToken) ? tokenB : tokenA;
+
+      // Récupère le user du destinataire
+      let destinataireUser = null;
+      if (destinataireToken) {
+        destinataireUser = await User.findOne({ token: destinataireToken }).select('username avatar token');
+      }
+
+      lastMessages.push({
+        ...msg.toObject(),
+        destinataire: destinataireUser,
+      });
+      seenChannels.add(msg.channel);
     }
-  });
+  }
 
   res.json({ result: true, messages: lastMessages });
 });
