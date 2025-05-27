@@ -144,6 +144,7 @@ router.post("/follow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur suivi avec succès",
+      friend:  { token: friend.token, username: friend.username, avatar: friend.avatar},
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
@@ -175,6 +176,7 @@ router.delete("/unfollow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur unfollow avec succès",
+      friend: { token: friend.token, username: friend.username, avatar: friend.avatar},
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
