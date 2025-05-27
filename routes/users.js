@@ -6,6 +6,8 @@ const User = require("../models/users");
 const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
+const cloudinary = require('cloudinary').v2
+const fileUpload = require("express-fileupload");
 
 //créer un compte
 router.post("/signup", (req, res) => {
@@ -85,37 +87,39 @@ router.delete("/:token", (req, res) => {
   });
 });
 
-//Mettre à jour la photo de profil
-router.put("/update-avatar", async (req, res) => {
-  try {
-    const { userId, avatarUrl } = req.body;
+// Middleware pour l'upload de fichiers
+router.use(fileUpload({ useTempFiles: true }));
 
-    if (!userId || !avatarUrl) {
-      return res
-        .status(400)
-        .json({ message: "UserId et avatarUrl sont requis" });
+// Route de mise à jour du username et de l'avatar
+router.put("/user/:token", async (req, res) => {
+  try {
+    // Rechercher l'utilisateur par token
+    const user = await User.findOne({ token: req.params.token });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { avatar: avatarUrl },
-      { new: true }
+    const updates = {};
+
+    if (req.body.username) {
+      updates.username = req.body.username;
+    }
+
+    if (req.files && req.files.avatar) {
+      const result = await cloudinary.uploader.upload(req.files.avatar.tempFilePath);
+      updates.avatar = result.secure_url;
+    }
+
+    // Mise à jour avec le token comme identifiant
+    const updatedUser = await User.findOneAndUpdate(
+        { token: req.params.token },
+        updates,
+        { new: true }
     );
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
-
-    res.json({
-      success: true,
-      user: updatedUser,
-    });
+    res.json({ success: true, user: updatedUser });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Erreur lors de la mise à jour de l'avatar",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
