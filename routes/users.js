@@ -7,7 +7,8 @@ const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
 const cloudinary = require('cloudinary').v2
-const fileUpload = require("express-fileupload");
+const fs = require("fs");
+const uniqid = require("uniqid");
 
 //créer un compte
 router.post("/signup", (req, res) => {
@@ -87,16 +88,24 @@ router.delete("/:token", (req, res) => {
   });
 });
 
-// Middleware pour l'upload de fichiers
-router.use(fileUpload({ useTempFiles: true }));
 
 // Route de mise à jour du username et de l'avatar
 router.put("/user/:token", async (req, res) => {
-  try {
+   try {
     // Rechercher l'utilisateur par token
-    const user = await User.findOne({ token: req.params.token });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+    console.log(req.files)
+    if (req.body.username) {
+      const existingUser = await User.findOne({
+        username: req.body.username,
+        token: { $ne: req.params.token }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Ce nom d'utilisateur est déjà pris"
+        });
+      }
     }
 
     const updates = {};
@@ -106,8 +115,17 @@ router.put("/user/:token", async (req, res) => {
     }
 
     if (req.files && req.files.avatar) {
-      const result = await cloudinary.uploader.upload(req.files.avatar.tempFilePath);
+      const filepath = `./tmp/${uniqid()}.jpg}`;
+      const resultMove = await req.files.avatar.mv(filepath);
+      if (!resultMove) {
+      const result = await cloudinary.uploader.upload(filepath);
       updates.avatar = result.secure_url;
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: "Erreur lors du téléchargement de l'avatar"
+        });
+      }
     }
 
     // Mise à jour avec le token comme identifiant
@@ -119,6 +137,7 @@ router.put("/user/:token", async (req, res) => {
 
     res.json({ success: true, user: updatedUser });
   } catch (error) {
+    console.log(error.message)
     res.status(500).json({ success: false, error: error.message });
   }
 });
