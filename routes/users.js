@@ -91,7 +91,7 @@ router.delete("/:token", (req, res) => {
 
 // Route de mise à jour du username et de l'avatar
 router.put("/user/:token", async (req, res) => {
-   try {
+  try {
     // Rechercher l'utilisateur par token
     console.log(req.files)
     if (req.body.username) {
@@ -115,11 +115,11 @@ router.put("/user/:token", async (req, res) => {
     }
 
     if (req.files && req.files.avatar) {
-      const filepath = `./tmp/${uniqid()}.jpg}`;
+      const filepath = `./tmp/${uniqid()}.jpg`;
       const resultMove = await req.files.avatar.mv(filepath);
       if (!resultMove) {
-      const result = await cloudinary.uploader.upload(filepath);
-      updates.avatar = result.secure_url;
+        const result = await cloudinary.uploader.upload(filepath);
+        updates.avatar = result.secure_url;
       } else {
         return res.status(500).json({
           success: false,
@@ -130,9 +130,9 @@ router.put("/user/:token", async (req, res) => {
 
     // Mise à jour avec le token comme identifiant
     const updatedUser = await User.findOneAndUpdate(
-        { token: req.params.token },
-        updates,
-        { new: true }
+      { token: req.params.token },
+      updates,
+      { new: true }
     );
 
     res.json({ success: true, user: updatedUser });
@@ -167,7 +167,7 @@ router.post("/follow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur suivi avec succès",
-      friend:  { token: friend.token, username: friend.username, avatar: friend.avatar},
+      friend: { token: friend.token, username: friend.username, avatar: friend.avatar },
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
@@ -199,7 +199,7 @@ router.delete("/unfollow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur unfollow avec succès",
-      friend: { token: friend.token, username: friend.username, avatar: friend.avatar},
+      friend: { token: friend.token, username: friend.username, avatar: friend.avatar },
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
