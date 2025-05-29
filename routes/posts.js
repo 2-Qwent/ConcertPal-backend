@@ -1,5 +1,6 @@
 var express = require("express");
 const User = require("../models/users");
+const Concert = require("../models/myConcerts");
 var router = express.Router();
 const Post = require("../models/posts");
 const { checkBody } = require("../modules/checkBody");
@@ -97,6 +98,31 @@ router.delete("/:_id", (req, res) => {
   });
 });
 
+router.post("/photos/:token", async (req, res) => {
+  const { concertId, photoUri } = req.body;
 
+  try {
+    const user = await User.findOne({ token: req.params.token });
+    if (!user) {
+      return res.status(404).json({ result: false, error: "Utilisateur non trouvé" });
+    }
+
+    const concert = await Concert.findById(concertId);
+    if (!concert) {
+      return res.status(404).json({ result: false, error: "Concert non trouvé" });
+    }
+
+    concert.photos.push({
+      uri: photoUri,
+      user: user._id,
+      date: new Date()
+    });
+
+    await concert.save();
+    res.json({ result: true, photo: concert.photos[concert.photos.length - 1] });
+  } catch (error) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
 
 module.exports = router;
