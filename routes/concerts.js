@@ -252,6 +252,7 @@ router.get('/getZoneUsers/:concertId/:zoneNumber', async (req, res) => {
   }
 });
 
+// Route pour récupérer la zone d'un utilisateur dans un concert
 router.get('/getUserZone/:concertId/:token', async (req, res) => {
   const { concertId, token } = req.params;
   try {

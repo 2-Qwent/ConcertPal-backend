@@ -232,4 +232,19 @@ router.get("/followers/:token", (req, res) => {
     });
 });
 
+//Récupérer les utilisateurs d'un concert
+router.get("/concertUsers/:concertId", (req, res) => {
+  User.find({ concertList: req.params.concertId })
+    .then((users) => {
+      if (users.length > 0) {
+        res.json({ result: true, users });
+      } else {
+        res.json({ result: false, error: "No users found for this concert" });
+      }
+    })
+    .catch((error) => {
+      res.status(500).json({ result: false, error: error.message });
+    });
+});
+
 module.exports = router;
