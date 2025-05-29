@@ -53,8 +53,7 @@ router.post('/:token/:postId', (req, res) => {
 router.get('/post/:postId', (req, res) => {
   // ───── ⋆ ───── Trouver le post original ───── ⋆ ─────
   Post.findById(req.params.postId)
-    .populate('comments')
-    // A FINIR DEMAIN
+    .populate({ path: 'comments', populate: { path: 'author' } })
     .then((post) => {
       if (!post) {
         res.json({ result: false, error: 'Post not found' });

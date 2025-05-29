@@ -139,9 +139,9 @@ router.put("/user/:token", async (req, res) => {
 
     // Application des mises à jour
     const updatedUser = await User.findOneAndUpdate(
-        { token: req.params.token },
-        updates,
-        { new: true }
+      { token: req.params.token },
+      updates,
+      { new: true }
     );
 
     res.json({ success: true, user: updatedUser });
@@ -177,7 +177,7 @@ router.post("/follow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur suivi avec succès",
-      friend:  { token: friend.token, username: friend.username, avatar: friend.avatar},
+      friend: { token: friend.token, username: friend.username, avatar: friend.avatar },
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });
@@ -209,7 +209,7 @@ router.delete("/unfollow/:userToken", async (req, res) => {
     res.json({
       result: true,
       message: "Utilisateur unfollow avec succès",
-      friend: { token: friend.token, username: friend.username, avatar: friend.avatar},
+      friend: { token: friend.token, username: friend.username, avatar: friend.avatar },
     });
   } catch (error) {
     res.status(500).json({ result: false, error: error.message });

@@ -15,7 +15,7 @@ router.post("/likes", (req, res) => {
     if (!alreadyLiked) {
       Post.updateOne(
         { _id: req.body._id },
-        { $push: { likes:  req.body.token } }
+        { $push: { likes: req.body.token } }
       ).then(() => {
         res.json({ result: true });
       });
@@ -69,7 +69,7 @@ router.post("/:token", (req, res) => {
 
 //récupérer tous les posts
 router.get("/", (req, res) => {
-  Post.find()
+  Post.find().sort({ date: -1 })
     .populate("author")
     .then((data) => {
       res.json({ result: true, posts: data });
