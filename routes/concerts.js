@@ -272,4 +272,19 @@ router.get('/getUserZone/:concertId/:token', async (req, res) => {
   }
 });
 
+// Récupérer les posts d'un concert
+router.get("/getPosts/:concertId", (req, res) => {
+  Concert.findById(req.params.concertId)
+    .populate({
+      path: "posts",
+      populate: [{ path: "author" }, { path: "concert" }],
+    })
+    .then((data) => {
+      res.json({ result: true, concertPosts: data.posts });
+    })
+    .catch((err) => {
+      res.status(500).json({ result: false, error: err.message });
+    });
+});
+
 module.exports = router;

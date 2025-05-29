@@ -3,6 +3,8 @@ const User = require("../models/users");
 var router = express.Router();
 const Post = require("../models/posts");
 const { checkBody } = require("../modules/checkBody");
+const Concert = require("../models/myConcerts")
+const Comment = require("../models/comments"); // Ajoute l'import du modèle Comment
 
 require("../models/connection");
 
@@ -46,6 +48,7 @@ router.post("/:token", (req, res) => {
         text: req.body.text,
         author: data._id,
         date: new Date(),
+        concert: req.body.concertId || null
       });
 
       newPost.save().then((post) => {
@@ -53,11 +56,24 @@ router.post("/:token", (req, res) => {
           { token: req.params.token },
           { $push: { posts: post._id } }
         ).then(() => {
-          Post.findById(post._id)
-            .populate("author")
-            .then((populatedPost) => {
-              res.json({ result: true, post: populatedPost });
-            });
+          if (req.body.concertId) {
+            Concert.updateOne(
+              { _id: req.body.concertId },
+              { $push: { posts: post._id } }
+            ).then(() => {
+              Post.findById(post._id)
+              .populate("author")
+              .then((populatedPost) => {
+                res.json({ result: true, post: populatedPost })
+              })
+            })
+          } else {
+            Post.findById(post._id)
+              .populate("author")
+              .then((populatedPost) => {
+                res.json({ result: true, post: populatedPost });
+              });
+          }
         });
       });
     } else {
@@ -71,6 +87,8 @@ router.post("/:token", (req, res) => {
 router.get("/", (req, res) => {
   Post.find().sort({ date: -1 })
     .populate("author")
+    .populate('concert')
+    .populate('comments')
     .then((data) => {
       res.json({ result: true, posts: data });
     });
@@ -80,6 +98,8 @@ router.get("/", (req, res) => {
 router.get("/:token", (req, res) => {
   Post.find()
     .populate("author")
+    .populate("concert")
+    .populate('comments')
     .then((data) => {
       let userPosts = data.filter((e) => e.author.token === req.params.token);
       res.json({ result: true, posts: userPosts });
@@ -87,15 +107,25 @@ router.get("/:token", (req, res) => {
 });
 
 //supprimer un post selon son id
-router.delete("/:_id", (req, res) => {
-  Post.findByIdAndDelete(req.params._id).then((data) => {
-    if (data) {
-      res.json({ result: true });
-    } else {
-      res.json({ result: false, error: "Post not found" });
+router.delete("/:_id", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params._id)
+    if (!post) {
+      return res.status(404).json({ result: false, error: "Post not found" })
     }
-  });
+
+    // Supprime les commentaires liés au post
+    await Comment.deleteMany({ _id: { $in: post.comments } })
+
+    // Supprime le post
+    await Post.findByIdAndDelete(req.params._id);
+
+    res.json({ result: true })
+  } catch (error) {
+    res.json({ result: false, error: error.message})
+  }
 });
+
 
 
 

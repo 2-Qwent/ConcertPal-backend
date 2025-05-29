@@ -12,6 +12,7 @@ const postSchema = mongoose.Schema({
     picture: pictureSchema,
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "comments" }],
     likes: [String],
+    concert: { type: mongoose.Schema.Types.ObjectId, ref: "myConcerts" }
 })
 
 const Post = mongoose.model('posts', postSchema)

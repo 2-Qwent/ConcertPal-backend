@@ -69,4 +69,40 @@ router.get('/post/:postId', (req, res) => {
 });
 
 
+
+//Ajout du token de la personne qui like le commentaire
+router.post("/likes", (req, res) => {
+  Comment.findById(req.body._id).then((data) => {
+    const alreadyLiked = data.likes.some((like) => like === req.body.token);
+    //si l'utilisateur n'a pas liké le post, on l'ajoute
+    if (!alreadyLiked) {
+      Comment.updateOne(
+        { _id: req.body._id },
+        { $push: { likes: req.body.token } }
+      ).then(() => {
+        res.json({ result: true });
+      });
+    } else {
+      //sinon on le retire
+      Comment.updateOne(
+        { _id: req.body._id },
+        { $pull: { likes: req.body.token } }
+      ).then(() => {
+        res.json({ result: true, data: data.likes });
+      });
+    }
+  });
+});
+
+//Supprimer un commentaire
+router.delete("/:commentId", (req, res) => {
+  Comment.findByIdAndDelete(req.params.commentId).then((data) => {
+    if (data) {
+      res.json({ result: true, data });
+    } else {
+      res.json({ result: false, error: "Post not found" });
+    }
+  });
+});
+
 module.exports = router;

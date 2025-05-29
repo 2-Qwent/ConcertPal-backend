@@ -14,6 +14,7 @@ const ConcertSchema = mongoose.Schema({
   pic: String,
   seatmap: String,
   zones: [ZoneSchema],
+  posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "posts" }]
 });
 
 const Concert = mongoose.model('myConcerts', ConcertSchema);
