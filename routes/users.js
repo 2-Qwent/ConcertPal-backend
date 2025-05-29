@@ -91,9 +91,10 @@ router.delete("/:token", (req, res) => {
 
 // Route de mise à jour du username et de l'avatar
 router.put("/user/:token", async (req, res) => {
-   try {
-    // Rechercher l'utilisateur par token
-    console.log(req.files)
+  try {
+    let updates = {};
+
+    // Vérification et mise à jour du username si présent
     if (req.body.username) {
       const existingUser = await User.findOne({
         username: req.body.username,
@@ -106,20 +107,20 @@ router.put("/user/:token", async (req, res) => {
           message: "Ce nom d'utilisateur est déjà pris"
         });
       }
-    }
 
-    const updates = {};
 
-    if (req.body.username) {
       updates.username = req.body.username;
     }
 
+    // Traitement et mise à jour de l'avatar si présent
     if (req.files && req.files.avatar) {
-      const filepath = `./tmp/${uniqid()}.jpg}`;
+      const filepath = `./tmp/${uniqid()}.jpg`;
       const resultMove = await req.files.avatar.mv(filepath);
+
       if (!resultMove) {
-      const result = await cloudinary.uploader.upload(filepath);
-      updates.avatar = result.secure_url;
+        const result = await cloudinary.uploader.upload(filepath);
+        updates.avatar = result.secure_url;
+        fs.unlinkSync(filepath);
       } else {
         return res.status(500).json({
           success: false,
@@ -128,7 +129,15 @@ router.put("/user/:token", async (req, res) => {
       }
     }
 
-    // Mise à jour avec le token comme identifiant
+    // Vérification si au moins une modification est demandée
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Aucune modification demandée"
+      });
+    }
+
+    // Application des mises à jour
     const updatedUser = await User.findOneAndUpdate(
         { token: req.params.token },
         updates,
@@ -136,8 +145,9 @@ router.put("/user/:token", async (req, res) => {
     );
 
     res.json({ success: true, user: updatedUser });
+
   } catch (error) {
-    console.log(error.message)
+    console.log(error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
