@@ -272,24 +272,4 @@ router.get('/getUserZone/:concertId/:token', async (req, res) => {
   }
 });
 
-// Route pour ajouter une photo à un concert
-router.post('/photo', async (req, res) => {
-  const { concertId, photoUri, token } = req.body;
-
-  try {
-    // Enregistrement dans la BDD
-    const concert = await Concert.findById(concertId);
-    concert.photos.push({
-      uri: photoUri,
-      user: token,
-      date: new Date()
-    });
-    await concert.save();
-
-    res.json({ success: true, photo: photoUri });
-  } catch (error) {
-    res.json({ success: false, error: error.message });
-  }
-});
-
 module.exports = router;
