@@ -45,6 +45,7 @@ router.post("/signup", (req, res) => {
 
 //connexion à un compte
 router.post("/signin", (req, res) => {
+  console.log("Tentative de connexion avec :", req.body.username);
   //vérifie si les champs sont bien remplis
   if (!checkBody(req.body, ["username", "password"])) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -53,8 +54,9 @@ router.post("/signin", (req, res) => {
 
   //vérifie si on trouve l'utilisateur
   User.findOne({
-    username: { $regex: new RegExp(req.body.username, "i") },
+    username: { $regex: new RegExp(`^${req.body.username}$`, "i") },
   }).then((data) => {
+    console.log("Résultat de la recherche :", data);
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
       res.json({ result: true, token: data.token });
     } else {
